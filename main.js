@@ -1,28 +1,29 @@
-const $ = document.querySelector.bind(document);
-const appEl = document.querySelector("#app");
-const formPrimaryEl = $("#form");
-const inputPrimaryEl = $("#input");
-const btnPrimaryEl = $("#btn");
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = document.querySelector.bind(document);
+  const appEl = document.querySelector("#app");
+  const formPrimaryEl = $("#form");
+  const inputPrimaryEl = $("#input");
+  const btnPrimaryEl = $("#btn");
 
-//Escape HTML
-const escapeHTML = (inputValue) => {
-  const div = document.createElement("div");
-  div.appendChild(document.createTextNode(inputValue));
-  return div.innerHTML;
-};
+  //Escape HTML
+  const escapeHTML = (inputValue) => {
+    const div = document.createElement("div");
+    div.appendChild(document.createTextNode(inputValue));
+    return div.innerHTML;
+  };
 
-//Render Todo
-const renderTodo = (inputValue) => {
-  if (inputValue) {
-    const divWrap = document.createElement("div");
+  //Render Todo
+  const renderTodo = (inputValue) => {
+    if (inputValue) {
+      const divWrap = document.createElement("div");
 
-    const paragraphEl = document.createElement("p");
-    paragraphEl.classList.add("todo-content");
-    paragraphEl.innerText = escapeHTML(inputValue);
+      const paragraphEl = document.createElement("p");
+      paragraphEl.classList.add("todo-content");
+      paragraphEl.innerText = escapeHTML(inputValue);
 
-    const divEl = document.createElement("div");
-    divEl.classList.add("flex", "gap-3");
-    divEl.innerHTML = `
+      const divEl = document.createElement("div");
+      divEl.classList.add("flex", "gap-3");
+      divEl.innerHTML = `
           <svg
             class="w-5 aspect-square edit"
             aria-hidden="true"
@@ -56,80 +57,81 @@ const renderTodo = (inputValue) => {
             ></path>
           </svg>`;
 
-    divWrap.appendChild(paragraphEl);
-    divWrap.appendChild(divEl);
-    return divWrap.innerHTML;
-  } else {
-    const divEl = document.createElement("div");
+      divWrap.appendChild(paragraphEl);
+      divWrap.appendChild(divEl);
+      return divWrap.innerHTML;
+    } else {
+      const divEl = document.createElement("div");
 
-    const inputEl = document.createElement("input");
-    inputEl.classList.add("input");
-    inputEl.type = "text";
-    inputEl.placeholder = "Update task";
-    inputEl.autofocus = true;
+      const inputEl = document.createElement("input");
+      inputEl.classList.add("input");
+      inputEl.type = "text";
+      inputEl.placeholder = "Update task";
+      inputEl.autofocus = true;
 
-    const btnEl = document.createElement("button");
-    btnEl.classList.add("btn");
-    btnEl.innerText = "Add Task";
-    
-    divEl.appendChild(inputEl);
-    divEl.appendChild(btnEl);
-    return divEl.innerHTML;
-  }
-};
+      const btnEl = document.createElement("button");
+      btnEl.classList.add("btn");
+      btnEl.innerText = "Add Task";
 
-//init Todo
-const init = () => {
-  let inputValue = inputPrimaryEl.value.trim();
-  if (inputValue) {
-    const todo = document.createElement("div");
-    todo.classList.add("todo");
-    todo.innerHTML = renderTodo(inputValue);
-    //Delete
-    todo.querySelector(".delete").addEventListener("click", (e) => {
-      e.stopPropagation();
-      e.currentTarget.closest(".todo").remove();
-    });
-    //Line through
-    todo.querySelector(".todo-content").addEventListener("click", (e) => {
-      e.currentTarget.classList.toggle("disabled");
-    });
-    //Add todo
-    appEl.appendChild(todo);
-    todo.querySelector(".edit").addEventListener("click", (e) => {
-      e.stopPropagation();
-      editTodo(e);
-    });
-  }
-  inputPrimaryEl.value = "";
-  inputPrimaryEl.focus();
-};
-
-formPrimaryEl.addEventListener("submit", (e) => {
-  e.preventDefault();
-  init();
-});
-
-//Edit Todo
-const editTodo = (e) => {
-  const todo = e.target.closest(".todo");
-
-  const formEditEl = document.createElement("form");
-  formEditEl.classList.add("form");
-  console.log(renderTodo())
-  formEditEl.innerHTML = renderTodo();
-
-  const inputEdit = formEditEl.querySelector(".input");
-  inputEdit.value = todo.querySelector(".todo-content").innerText;
-  
-  appEl.replaceChild(formEditEl, todo);
-  inputEdit.focus();
-
-  formEditEl.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (inputEdit.value.trim()) {
-      todo.querySelector(".todo-content").innerText = inputEdit.value;
-      appEl.replaceChild(todo, formEditEl);
+      divEl.appendChild(inputEl);
+      divEl.appendChild(btnEl);
+      return divEl.innerHTML;
     }
+  };
+
+  //init Todo
+  const init = () => {
+    let inputValue = inputPrimaryEl.value.trim();
+    if (inputValue) {
+      const todo = document.createElement("div");
+      todo.classList.add("todo");
+      todo.innerHTML = renderTodo(inputValue);
+      //Delete
+      todo.querySelector(".delete").addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.currentTarget.closest(".todo").remove();
+      });
+      //Line through
+      todo.querySelector(".todo-content").addEventListener("click", (e) => {
+        e.currentTarget.classList.toggle("disabled");
+      });
+      //Add todo
+      appEl.appendChild(todo);
+      todo.querySelector(".edit").addEventListener("click", (e) => {
+        e.stopPropagation();
+        editTodo(e);
+      });
+    }
+    inputPrimaryEl.value = "";
+    inputPrimaryEl.focus();
+  };
+
+  //Edit Todo
+  const editTodo = (e) => {
+    const todo = e.target.closest(".todo");
+
+    const formEditEl = document.createElement("form");
+    formEditEl.classList.add("form");
+    console.log(renderTodo());
+    formEditEl.innerHTML = renderTodo();
+
+    const inputEdit = formEditEl.querySelector(".input");
+    inputEdit.value = todo.querySelector(".todo-content").innerText;
+
+    appEl.replaceChild(formEditEl, todo);
+    inputEdit.focus();
+
+    formEditEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (inputEdit.value.trim()) {
+        todo.querySelector(".todo-content").innerText = inputEdit.value;
+        appEl.replaceChild(todo, formEditEl);
+      }
+    });
+  };
+
+  formPrimaryEl.addEventListener("submit", (e) => {
+    e.preventDefault();
+    init();
   });
-};
+});
