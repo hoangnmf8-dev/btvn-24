@@ -23,7 +23,7 @@
       }
 
       .form {
-        @apply flex text-sm mt-4 mb-8;
+        @apply text-sm mt-4 mb-8;
       }
 
       .input {
@@ -53,15 +53,18 @@
         </h1>
 
         <form id="form" class="form">
-          <input
-            id="input"
-            class="input"
-            type="text"
-            placeholder="What is the task today?"
-            autocomplete="off"
-            autofocus
-          />
-          <button id="btn" class="btn">Add Task</button>
+          <div class="flex w-full">
+            <input
+              id="input"
+              class="input"
+              type="text"
+              placeholder="What is the task today?"
+              autocomplete="off"
+              autofocus
+            />
+            <button id="btn" class="btn">Add Task</button>
+          </div>
+          <span class="form-warning hidden"></span>
         </form>
       </div>
     </main>

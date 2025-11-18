@@ -1,9 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const TODOS = "todos";
   const $ = document.querySelector.bind(document);
   const appEl = document.querySelector("#app");
   const formPrimaryEl = $("#form");
   const inputPrimaryEl = $("#input");
   const btnPrimaryEl = $("#btn");
+  const warningEl = formPrimaryEl.querySelector(".form-warning");
+  const dataTasks = JSON.parse(localStorage.getItem(TODOS)) ?? [];
 
   //Escape HTML
   const escapeHTML = (inputValue) => {
@@ -62,6 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return divWrap.innerHTML;
     } else {
       const divEl = document.createElement("div");
+      const divWrap = document.createElement("div");
+      divWrap.classList.add("flex", "w-full");
 
       const inputEl = document.createElement("input");
       inputEl.classList.add("input");
@@ -73,37 +78,33 @@ document.addEventListener("DOMContentLoaded", () => {
       btnEl.classList.add("btn");
       btnEl.innerText = "Add Task";
 
-      divEl.appendChild(inputEl);
-      divEl.appendChild(btnEl);
+      divWrap.appendChild(inputEl);
+      divWrap.appendChild(btnEl);
+      const warningEl = document.createElement("span");
+      warningEl.classList.add("form-warning", "hidden");
+
+      divEl.appendChild(divWrap);
+      divEl.appendChild(warningEl);
       return divEl.innerHTML;
     }
   };
 
-  //init Todo
-  const init = () => {
-    let inputValue = inputPrimaryEl.value.trim();
-    if (inputValue) {
-      const todo = document.createElement("div");
-      todo.classList.add("todo");
-      todo.innerHTML = renderTodo(inputValue);
-      //Delete
-      todo.querySelector(".delete").addEventListener("click", (e) => {
-        e.stopPropagation();
-        e.currentTarget.closest(".todo").remove();
-      });
-      //Line through
-      todo.querySelector(".todo-content").addEventListener("click", (e) => {
-        e.currentTarget.classList.toggle("disabled");
-      });
-      //Add todo
-      appEl.appendChild(todo);
-      todo.querySelector(".edit").addEventListener("click", (e) => {
-        e.stopPropagation();
-        editTodo(e);
-      });
+  
+  //Check duplicates and blank
+  const checkInput = (inputValue) => {
+    const checkInputObj = {};
+    let isFinded = dataTasks.find(task => task.toLowerCase() === inputValue.toLowerCase());
+    if (isFinded) {
+      checkInputObj.isInput = false;
+      checkInputObj.warningText = "This task already exists";
+    } else if(!inputValue) {
+      checkInputObj.isInput = false;
+      checkInputObj.warningText = "Task cannot be left blank";
     }
-    inputPrimaryEl.value = "";
-    inputPrimaryEl.focus();
+    else {
+      checkInputObj.isInput = true;
+    }
+    return checkInputObj;
   };
 
   //Edit Todo
@@ -112,26 +113,104 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const formEditEl = document.createElement("form");
     formEditEl.classList.add("form");
-    console.log(renderTodo());
     formEditEl.innerHTML = renderTodo();
 
     const inputEdit = formEditEl.querySelector(".input");
-    inputEdit.value = todo.querySelector(".todo-content").innerText;
+    let beforeInputEditValue = todo.querySelector(".todo-content").innerText;
+    inputEdit.value = beforeInputEditValue;
 
     appEl.replaceChild(formEditEl, todo);
     inputEdit.focus();
 
     formEditEl.addEventListener("submit", (e) => {
       e.preventDefault();
-      if (inputEdit.value.trim()) {
-        todo.querySelector(".todo-content").innerText = inputEdit.value;
+      let afterInputEditValue = inputEdit.value.trim();
+      const checkInputObj = checkInput(afterInputEditValue);
+      if (afterInputEditValue) {
+        todo.querySelector(".todo-content").innerText = afterInputEditValue;
+        let indexTask = dataTasks.indexOf(beforeInputEditValue);
+        dataTasks.splice(indexTask, 1, afterInputEditValue);
+        localStorage.setItem(TODOS, JSON.stringify(dataTasks));
         appEl.replaceChild(todo, formEditEl);
+      } else {
+        const warningEditEl = formEditEl.querySelector(".form-warning");
+        console.log("🚀 ~ editTodo ~ warningEditEl:", warningEditEl);
+        warningEditEl.classList.add("text-red-400");
+        warningEditEl.innerText = checkInputObj.warningText;
+        warningEditEl.classList.remove("hidden");
       }
     });
   };
 
+  //Disabled task
+  const disabledTask = (e) => {
+    e.stopPropagation();
+    e.currentTarget.classList.toggle("disabled");
+  };
+
+  //Delete
+  const deleteTask = (e) => {
+    e.stopPropagation();
+    let taskValue = e.currentTarget
+      .closest(".todo")
+      .querySelector(".todo-content").innerText;
+    let indexTask = dataTasks.indexOf(taskValue);
+    dataTasks.splice(indexTask, 1);
+    localStorage.setItem(TODOS, JSON.stringify(dataTasks));
+    e.currentTarget.closest(".todo").remove();
+  };
+
+  //Handle Todo
+  const handleEventTask = (task = null) => {
+    let inputValue = task ?? inputPrimaryEl.value.trim();
+    const checkInputObj = checkInput(inputValue);
+    if(task !== null) {
+      checkInputObj.isInput = true;
+    }
+    if (inputValue && checkInputObj.isInput) {
+      warningEl.classList.add("hidden");
+      const todo = document.createElement("div");
+      todo.classList.add("todo");
+      todo.innerHTML = renderTodo(inputValue);
+      //Delete
+      todo.querySelector(".delete").addEventListener("click", (e) => {
+        deleteTask(e);
+      });
+      //Line through
+      todo.querySelector(".todo-content").addEventListener("click", (e) => {
+        disabledTask(e);
+      });
+      //Add todo
+      appEl.appendChild(todo);
+      if(!dataTasks.includes(inputValue)) {
+        dataTasks.push(inputValue);
+      }
+      localStorage.setItem(TODOS, JSON.stringify(dataTasks));
+      todo.querySelector(".edit").addEventListener("click", (e) => {
+        e.stopPropagation();
+        //Edit todo
+        editTodo(e);
+      });
+    } else {
+      warningEl.classList.remove("hidden");
+      warningEl.classList.add("text-red-400");
+      warningEl.innerText = checkInputObj.warningText;
+    }
+    inputPrimaryEl.value = "";
+    inputPrimaryEl.focus();
+  };
+
   formPrimaryEl.addEventListener("submit", (e) => {
     e.preventDefault();
-    init();
+    handleEventTask();
   });
+
+  //Init
+  const init = () => {
+    dataTasks.forEach((task) => {
+      handleEventTask(task);
+    });
+  };
+
+  init();
 });
