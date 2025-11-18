@@ -1,12 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
   const TODOS = "todos";
+  const dataTasks = JSON.parse(localStorage.getItem(TODOS)) ?? [];
   const $ = document.querySelector.bind(document);
   const appEl = document.querySelector("#app");
   const formPrimaryEl = $("#form");
   const inputPrimaryEl = $("#input");
-  const btnPrimaryEl = $("#btn");
   const warningEl = formPrimaryEl.querySelector(".form-warning");
-  const dataTasks = JSON.parse(localStorage.getItem(TODOS)) ?? [];
+  const overlay = document.querySelector(".overlay");
+  const modal = document.querySelector(".modal");
 
   //Escape HTML
   const escapeHTML = (inputValue) => {
@@ -16,13 +17,21 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   //Render Todo
-  const renderTodo = (inputValue) => {
-    if (inputValue) {
+  const renderTodo = ({ value, status } = {}) => {
+    if (value) {
       const divWrap = document.createElement("div");
 
       const paragraphEl = document.createElement("p");
-      paragraphEl.classList.add("todo-content");
-      paragraphEl.innerText = escapeHTML(inputValue);
+      paragraphEl.classList.add(
+        "todo-content",
+        "break-words",
+        "pr-4",
+        "max-w-[300px]"
+      );
+      status === "active"
+        ? paragraphEl.classList.remove("disabled")
+        : paragraphEl.classList.add("disabled");
+      paragraphEl.innerText = escapeHTML(value);
 
       const divEl = document.createElement("div");
       divEl.classList.add("flex", "gap-3");
@@ -72,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
       inputEl.classList.add("input");
       inputEl.type = "text";
       inputEl.placeholder = "Update task";
-      inputEl.autofocus = true;
+      inputEl.focus();
 
       const btnEl = document.createElement("button");
       btnEl.classList.add("btn");
@@ -89,19 +98,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  
   //Check duplicates and blank
   const checkInput = (inputValue) => {
     const checkInputObj = {};
-    let isFinded = dataTasks.find(task => task.toLowerCase() === inputValue.toLowerCase());
-    if (isFinded) {
-      checkInputObj.isInput = false;
-      checkInputObj.warningText = "This task already exists";
-    } else if(!inputValue) {
+
+    let hasTask = dataTasks.some((task) => task.value === inputValue);
+    if (!inputValue) {
       checkInputObj.isInput = false;
       checkInputObj.warningText = "Task cannot be left blank";
-    }
-    else {
+    } else if (hasTask) {
+      checkInputObj.isInput = false;
+      checkInputObj.warningText = "The task already exists";
+    } else {
       checkInputObj.isInput = true;
     }
     return checkInputObj;
@@ -126,15 +134,21 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       let afterInputEditValue = inputEdit.value.trim();
       const checkInputObj = checkInput(afterInputEditValue);
-      if (afterInputEditValue) {
+      let hasAfterInputInData = dataTasks.some(
+        (task) => task.value === afterInputEditValue
+      );
+      const warningEditEl = formEditEl.querySelector(".form-warning");
+
+      if (afterInputEditValue && !hasAfterInputInData) {
         todo.querySelector(".todo-content").innerText = afterInputEditValue;
-        let indexTask = dataTasks.indexOf(beforeInputEditValue);
-        dataTasks.splice(indexTask, 1, afterInputEditValue);
+        let indexTask = dataTasks.findIndex(
+          (task) => task.value === beforeInputEditValue
+        );
+        dataTasks[indexTask].value = afterInputEditValue;
         localStorage.setItem(TODOS, JSON.stringify(dataTasks));
         appEl.replaceChild(todo, formEditEl);
+        warningEditEl.classList.add("hidden");
       } else {
-        const warningEditEl = formEditEl.querySelector(".form-warning");
-        console.log("🚀 ~ editTodo ~ warningEditEl:", warningEditEl);
         warningEditEl.classList.add("text-red-400");
         warningEditEl.innerText = checkInputObj.warningText;
         warningEditEl.classList.remove("hidden");
@@ -144,53 +158,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
   //Disabled task
   const disabledTask = (e) => {
-    e.stopPropagation();
-    e.currentTarget.classList.toggle("disabled");
+    let indexTodoContent = dataTasks.findIndex(
+      (task) => task.value === e.target.innerText
+    );
+    if (dataTasks[indexTodoContent].status === "active") {
+      dataTasks[indexTodoContent].status = "disabled";
+    } else {
+      dataTasks[indexTodoContent].status = "active";
+    }
+    localStorage.setItem(TODOS, JSON.stringify(dataTasks));
+    e.target.classList.toggle("disabled");
   };
 
   //Delete
   const deleteTask = (e) => {
-    e.stopPropagation();
-    let taskValue = e.currentTarget
+    let taskValue = e.target
       .closest(".todo")
       .querySelector(".todo-content").innerText;
-    let indexTask = dataTasks.indexOf(taskValue);
-    dataTasks.splice(indexTask, 1);
-    localStorage.setItem(TODOS, JSON.stringify(dataTasks));
-    e.currentTarget.closest(".todo").remove();
+
+    modal.classList.remove("hidden");
+    overlay.classList.remove("hidden");
+    modal.querySelector(
+      ".notify"
+    ).innerText = `Are you sure you want to delete this task? This action cannot be undone.`;
+    modal.querySelector(".confirm-delete").onclick = () => {
+      e.target.closest(".todo").remove();
+      modal.classList.add("hidden");
+      overlay.classList.add("hidden");
+      let indexTask = dataTasks.findIndex((task) => task.value === taskValue);
+      dataTasks.splice(indexTask, 1);
+      localStorage.setItem(TODOS, JSON.stringify(dataTasks));
+    };
+    modal.querySelector(".confirm-cancel").onclick = () => {
+      modal.classList.add("hidden");
+      overlay.classList.add("hidden");
+    }
   };
 
   //Handle Todo
-  const handleEventTask = (task = null) => {
-    let inputValue = task ?? inputPrimaryEl.value.trim();
+  const handleEventTask = () => {
+    let inputValue = inputPrimaryEl.value.trim();
     const checkInputObj = checkInput(inputValue);
-    if(task !== null) {
-      checkInputObj.isInput = true;
-    }
+
     if (inputValue && checkInputObj.isInput) {
+      const taskObj = { value: inputValue, status: "active" };
+      dataTasks.push(taskObj);
       warningEl.classList.add("hidden");
       const todo = document.createElement("div");
       todo.classList.add("todo");
-      todo.innerHTML = renderTodo(inputValue);
-      //Delete
-      todo.querySelector(".delete").addEventListener("click", (e) => {
-        deleteTask(e);
-      });
-      //Line through
-      todo.querySelector(".todo-content").addEventListener("click", (e) => {
-        disabledTask(e);
-      });
-      //Add todo
+      todo.innerHTML = renderTodo(taskObj);
+
       appEl.appendChild(todo);
-      if(!dataTasks.includes(inputValue)) {
-        dataTasks.push(inputValue);
-      }
       localStorage.setItem(TODOS, JSON.stringify(dataTasks));
-      todo.querySelector(".edit").addEventListener("click", (e) => {
-        e.stopPropagation();
-        //Edit todo
-        editTodo(e);
-      });
     } else {
       warningEl.classList.remove("hidden");
       warningEl.classList.add("text-red-400");
@@ -205,10 +224,27 @@ document.addEventListener("DOMContentLoaded", () => {
     handleEventTask();
   });
 
+  appEl.addEventListener("click", (e) => {
+    // Sử dụng Event Delegation để giảm tối đa sự kiện, tránh rò rỉ bộ nhớ
+    if (e.target.matches(".delete path")) {
+      // Dùng path để chọn chính xác phần tử
+      deleteTask(e);
+    } else if (e.target.matches(".todo-content")) {
+      disabledTask(e);
+    } else if (e.target.matches(".edit path")) {
+      editTodo(e);
+    }
+    warningEl.classList.add("hidden");
+  });
+
   //Init
   const init = () => {
-    dataTasks.forEach((task) => {
-      handleEventTask(task);
+    dataTasks.forEach(({ value, status }) => {
+      warningEl.classList.add("hidden");
+      const todo = document.createElement("div");
+      todo.classList.add("todo");
+      todo.innerHTML = renderTodo({ value, status });
+      appEl.appendChild(todo);
     });
   };
 

@@ -67,6 +67,14 @@
           <span class="form-warning hidden"></span>
         </form>
       </div>
+
+      <div class="overlay hidden fixed inset-0 bg-gray-400 opacity-70"></div>
+      <div class="modal hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[350px] min-h-[150px] bg-white rounded-sm py-[15px] px-[15px]">
+        <p class="font-bold text-[22px] mb-3">Are you sure?</p>
+        <p class="notify text-[14px] mb-3"></p>
+        <button class="confirm-delete w-[140px] bg-[var(--color-violet)] px-10 py-2 mr-2 rounded-sm text-white cursor-pointer hover:bg-violet-400">Yes</button>
+        <button class="confirm-cancel w-[140px] border-1 px-10 py-2 rounded-sm cursor-pointer hover:bg-gray-300">Cancel</button>
+      </div>
     </main>
 
     <script src="./main.js"></script>
