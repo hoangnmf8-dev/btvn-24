@@ -134,11 +134,13 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       let afterInputEditValue = inputEdit.value.trim();
       const checkInputObj = checkInput(afterInputEditValue);
-      let hasAfterInputInData = dataTasks.some(
+      let indexBeforeInputInData = dataTasks.findIndex(task => task.value === beforeInputEditValue); //khi người dùng vô tình ấn vào edit hoặc ấn vào edit nhưng không muốn sửa nữa thì cho phép người dùng lưu task
+      let dataTasksClone = dataTasks.slice(0);
+      dataTasksClone.splice(indexBeforeInputInData, 1);
+      let hasAfterInputInData = dataTasksClone.some(
         (task) => task.value === afterInputEditValue
       );
       const warningEditEl = formEditEl.querySelector(".form-warning");
-
       if (afterInputEditValue && !hasAfterInputInData) {
         todo.querySelector(".todo-content").innerText = afterInputEditValue;
         let indexTask = dataTasks.findIndex(
