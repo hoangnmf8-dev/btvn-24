@@ -1,254 +1,210 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const TODOS = "todos";
-  const dataTasks = JSON.parse(localStorage.getItem(TODOS)) ?? [];
-  const $ = document.querySelector.bind(document);
-  const appEl = document.querySelector("#app");
-  const formPrimaryEl = $("#form");
-  const inputPrimaryEl = $("#input");
-  const warningEl = formPrimaryEl.querySelector(".form-warning");
-  const overlay = document.querySelector(".overlay");
-  const modal = document.querySelector(".modal");
+const TODOS = "todos";
+const dataTodos = JSON.parse(localStorage.getItem(TODOS)) ?? [];
+const $ = document.querySelector.bind(document);
+const appEl = $("#app");
+const formPrimaryEl = $("#form");
+const inputPrimaryEl = $("#input");
+const warningPrimaryEl = formPrimaryEl.querySelector(".form-warning");
+const todoList = $(".todo-list");
+const overlay = $(".overlay");
+const modal = $(".modal");
 
-  //Escape HTML
-  const escapeHTML = (inputValue) => {
-    const div = document.createElement("div");
-    div.appendChild(document.createTextNode(inputValue));
-    return div.innerHTML;
-  };
+//Escape html
+const escapeHTML = (value) => {
+  const div = document.createElement("div");
+  const text = document.createTextNode(value);
+  div.appendChild(text);
+  return div.innerHTML;
+};
 
-  //Render Todo
-  const renderTodo = ({ value, status } = {}) => {
-    if (value) {
-      const divWrap = document.createElement("div");
+//Set data
+const setData = (dataTodos) => {
+  localStorage.setItem(TODOS, JSON.stringify(dataTodos));
+};
 
-      const paragraphEl = document.createElement("p");
-      paragraphEl.classList.add(
-        "todo-content",
-        "break-words",
-        "pr-4",
-        "max-w-[300px]"
-      );
-      status === "active"
-        ? paragraphEl.classList.remove("disabled")
-        : paragraphEl.classList.add("disabled");
-      paragraphEl.innerText = escapeHTML(value);
+//Show warning
+const showWarning = (element, warningText) => {
+  element.classList.add("text-red-400");
+  element.innerText = warningText;
+  element.classList.remove("hidden");
+};
 
-      const divEl = document.createElement("div");
-      divEl.classList.add("flex", "gap-3");
-      divEl.innerHTML = `
-          <svg
-            class="w-5 aspect-square edit"
-            aria-hidden="true"
-            focusable="false"
-            data-prefix="fas"
-            data-icon="pen-to-square"
-            class="svg-inline--fa fa-pen-to-square"
-            role="img"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 512 512"
-          >
-            <path
-              fill="currentColor"
-              d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.8 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"
-            ></path>
-          </svg>
-          <svg
-            class="w-5 aspect-square delete"
-            aria-hidden="true"
-            focusable="false"
-            data-prefix="fas"
-            data-icon="trash"
-            class="svg-inline--fa fa-trash"
-            role="img"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 448 512"
-          >
-            <path
-              fill="currentColor"
-              d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"
-            ></path>
-          </svg>`;
+//Check input
+const checkInput = (inputValue, dataTodos) => {
+  const checkInputObj = {};
+  let hasTodo = dataTodos.some(
+    (todo) => todo.value.toLowerCase() === inputValue.toLowerCase()
+  );
+  if (!inputValue) {
+    checkInputObj.isValid = false;
+    checkInputObj.warningText = "Todo cannot be left blank";
+  } else if (hasTodo) {
+    checkInputObj.isValid = false;
+    checkInputObj.warningText = "The todo already exists";
+  } else {
+    checkInputObj.isValid = true;
+  }
+  return checkInputObj;
+};
 
-      divWrap.appendChild(paragraphEl);
-      divWrap.appendChild(divEl);
-      return divWrap.innerHTML;
-    } else {
-      const divEl = document.createElement("div");
-      const divWrap = document.createElement("div");
-      divWrap.classList.add("flex", "w-full");
+//State transition for todo
+const stateTransitionTodo = (e) => {
+  const currentTodo = e.target.closest(".todo");
+  let todoIndex = currentTodo.dataset.id;
+  if (dataTodos[todoIndex].status === "active") {
+    e.target.classList.add("disabled");
+    dataTodos[todoIndex].status = "disabled";
+  } else {
+    e.target.classList.remove("disabled");
+    dataTodos[todoIndex].status = "active";
+  }
+  setData(dataTodos);
+};
 
-      const inputEl = document.createElement("input");
-      inputEl.classList.add("input");
-      inputEl.type = "text";
-      inputEl.placeholder = "Update task";
-      inputEl.focus();
-
-      const btnEl = document.createElement("button");
-      btnEl.classList.add("btn");
-      btnEl.innerText = "Add Task";
-
-      divWrap.appendChild(inputEl);
-      divWrap.appendChild(btnEl);
-      const warningEl = document.createElement("span");
-      warningEl.classList.add("form-warning", "hidden");
-
-      divEl.appendChild(divWrap);
-      divEl.appendChild(warningEl);
-      return divEl.innerHTML;
-    }
-  };
-
-  //Check duplicates and blank
-  const checkInput = (inputValue) => {
-    const checkInputObj = {};
-
-    let hasTask = dataTasks.some((task) => task.value.toLowerCase() === inputValue.toLowerCase());
-    if (!inputValue) {
-      checkInputObj.isInput = false;
-      checkInputObj.warningText = "Task cannot be left blank";
-    } else if (hasTask) {
-      checkInputObj.isInput = false;
-      checkInputObj.warningText = "The task already exists";
-    } else {
-      checkInputObj.isInput = true;
-    }
-    return checkInputObj;
-  };
-
-  //Edit Todo
-  const editTodo = (e) => {
-    const todo = e.target.closest(".todo");
-
-    const formEditEl = document.createElement("form");
-    formEditEl.classList.add("form");
-    formEditEl.innerHTML = renderTodo();
-
-    const inputEdit = formEditEl.querySelector(".input");
-    let beforeInputEditValue = todo.querySelector(".todo-content").innerText;
-    inputEdit.value = beforeInputEditValue;
-
-    appEl.replaceChild(formEditEl, todo);
-    inputEdit.focus();
-
-    formEditEl.addEventListener("submit", (e) => {
-      e.preventDefault();
-      let afterInputEditValue = inputEdit.value.trim();
-      const checkInputObj = checkInput(afterInputEditValue);
-      let indexBeforeInputInData = dataTasks.findIndex(task => task.value === beforeInputEditValue); //khi người dùng vô tình ấn vào edit hoặc ấn vào edit nhưng không muốn sửa nữa thì cho phép người dùng lưu task
-      let dataTasksClone = dataTasks.slice(0);
-      dataTasksClone.splice(indexBeforeInputInData, 1);
-      let hasAfterInputInData = dataTasksClone.some(
-        (task) => task.value.toLowerCase() === afterInputEditValue.toLowerCase()
-      );
-      const warningEditEl = formEditEl.querySelector(".form-warning");
-      if (afterInputEditValue && !hasAfterInputInData) {
-        todo.querySelector(".todo-content").innerText = afterInputEditValue;
-        let indexTask = dataTasks.findIndex(
-          (task) => task.value === beforeInputEditValue
-        );
-        dataTasks[indexTask].value = afterInputEditValue;
-        localStorage.setItem(TODOS, JSON.stringify(dataTasks));
-        appEl.replaceChild(todo, formEditEl);
-        warningEditEl.classList.add("hidden");
-      } else {
-        warningEditEl.classList.add("text-red-400");
-        warningEditEl.innerText = checkInputObj.warningText;
-        warningEditEl.classList.remove("hidden");
-      }
+//Add todo
+const addTodo = (e) => {
+  let inputPrimaryValue = inputPrimaryEl.value.trim();
+  let checkInputObj = checkInput(inputPrimaryValue, dataTodos);
+  if (checkInputObj.isValid) {
+    const liEl = document.createElement("li");
+    liEl.classList.add("todo");
+    liEl.dataset.id = dataTodos.length;
+    liEl.innerHTML = `
+      <p class="todo-content break-words pr-4 max-w-[300px]">${escapeHTML(
+        inputPrimaryValue
+      )}</p>
+      <div class="flex gap-3">
+        <svg class="w-5 aspect-square edit" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen-to-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+          <path fill="currentColor" d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.8 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"></path>
+        </svg>
+        <svg class="w-5 aspect-square delete" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="trash" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+          <path fill="currentColor" d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path>
+        </svg>
+      </div>
+    `;
+    todoList.appendChild(liEl);
+    dataTodos.push({
+      value: inputPrimaryValue,
+      status: "active",
     });
+    setData(dataTodos);
+    warningPrimaryEl.classList.add("hidden");
+  } else {
+    showWarning(warningPrimaryEl, checkInputObj.warningText);
+  }
+  inputPrimaryEl.value = "";
+  inputPrimaryEl.focus();
+};
+
+//Delete todo
+const deleteTodo = (e) => {
+  let indexTodo = e.target.closest(".todo").dataset.id;
+  modal.classList.remove("hidden");
+  overlay.classList.remove("hidden");
+  modal.querySelector(
+    ".notify"
+  ).innerText = `Are you sure you want to delete this todo? This action cannot be undone.`;
+  modal.querySelector(".confirm-delete").onclick = () => {
+    e.target.closest(".todo").remove();
+    modal.classList.add("hidden");
+    overlay.classList.add("hidden");
+    dataTodos.splice(indexTodo, 1);
+    todoList.querySelectorAll(".todo").forEach((todo, index) => {
+      todo.dataset.id = index;
+    });
+    setData(dataTodos);
   };
-
-  //Disabled task
-  const disabledTask = (e) => {
-    let indexTodoContent = dataTasks.findIndex(
-      (task) => task.value === e.target.innerText
-    );
-    if (dataTasks[indexTodoContent].status === "active") {
-      dataTasks[indexTodoContent].status = "disabled";
-    } else {
-      dataTasks[indexTodoContent].status = "active";
-    }
-    localStorage.setItem(TODOS, JSON.stringify(dataTasks));
-    e.target.classList.toggle("disabled");
+  modal.querySelector(".confirm-cancel").onclick = () => {
+    modal.classList.add("hidden");
+    overlay.classList.add("hidden");
   };
+};
 
-  //Delete
-  const deleteTask = (e) => {
-    let taskValue = e.target
-      .closest(".todo")
-      .querySelector(".todo-content").innerText;
+//Edit todo
+const editTodo = (e) => {
+  const currentTodo = e.target.closest(".todo");
+  let indexTodo = currentTodo.dataset.id;
+  currentTodo.classList.remove("todo");
+  let todoContent = currentTodo.querySelector(".todo-content").innerText;
+  currentTodo.innerHTML = `
+  <form class="form">
+    <div class="flex w-full">
+      <input class="input" type="text" placeholder="Update task">
+      <button class="btn">Update Task</button>
+    </div>
+    <span class="form-warning hidden"></span>
+  </form>
+  `;
+  currentTodo.querySelector(".input").value = todoContent;
+  currentTodo.querySelector(".input").focus();
 
-    modal.classList.remove("hidden");
-    overlay.classList.remove("hidden");
-    modal.querySelector(
-      ".notify"
-    ).innerText = `Are you sure you want to delete this task? This action cannot be undone.`;
-    modal.querySelector(".confirm-delete").onclick = () => {
-      e.target.closest(".todo").remove();
-      modal.classList.add("hidden");
-      overlay.classList.add("hidden");
-      let indexTask = dataTasks.findIndex((task) => task.value === taskValue);
-      dataTasks.splice(indexTask, 1);
-      localStorage.setItem(TODOS, JSON.stringify(dataTasks));
-    };
-    modal.querySelector(".confirm-cancel").onclick = () => {
-      modal.classList.add("hidden");
-      overlay.classList.add("hidden");
-    }
-  };
-
-  //Handle Todo
-  const handleEventTask = () => {
-    let inputValue = inputPrimaryEl.value.trim();
-    const checkInputObj = checkInput(inputValue);
-
-    if (inputValue && checkInputObj.isInput) {
-      const taskObj = { value: inputValue, status: "active" };
-      dataTasks.push(taskObj);
-      warningEl.classList.add("hidden");
-      const todo = document.createElement("div");
-      todo.classList.add("todo");
-      todo.innerHTML = renderTodo(taskObj);
-
-      appEl.appendChild(todo);
-      localStorage.setItem(TODOS, JSON.stringify(dataTasks));
-    } else {
-      warningEl.classList.remove("hidden");
-      warningEl.classList.add("text-red-400");
-      warningEl.innerText = checkInputObj.warningText;
-    }
-    inputPrimaryEl.value = "";
-    inputPrimaryEl.focus();
-  };
-
-  formPrimaryEl.addEventListener("submit", (e) => {
+  currentTodo.querySelector(".form").onsubmit = (e) => {
     e.preventDefault();
-    handleEventTask();
-  });
+    let inputEditvalue = currentTodo.querySelector(".input").value.trim();
+    const dataTodosClone = dataTodos.slice();
+    dataTodosClone.splice(indexTodo, 1);
+    const checkInputObj = checkInput(inputEditvalue, dataTodosClone);
 
-  appEl.addEventListener("click", (e) => {
-    // Sử dụng Event Delegation để giảm tối đa sự kiện, tránh rò rỉ bộ nhớ
-    if (e.target.matches(".delete path")) {
-      // Dùng path để chọn chính xác phần tử
-      deleteTask(e);
-    } else if (e.target.matches(".todo-content")) {
-      disabledTask(e);
-    } else if (e.target.matches(".edit path")) {
-      editTodo(e);
+    if (checkInputObj.isValid) {
+      currentTodo.classList.add("todo");
+      currentTodo.innerHTML = `
+        <p class="todo-content break-words pr-4 max-w-[300px] ${dataTodos[indexTodo].status === "disabled" ? "disabled" : null}">${escapeHTML(
+          inputEditvalue
+        )}</p>
+        <div class="flex gap-3">
+          <svg class="w-5 aspect-square edit" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen-to-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+            <path fill="currentColor" d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.8 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"></path>
+          </svg>
+          <svg class="w-5 aspect-square delete" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="trash" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+            <path fill="currentColor" d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path>
+          </svg>
+        </div>
+      `;
+    } else {
+      showWarning(
+        currentTodo.querySelector(".form-warning"),
+        checkInputObj.warningText
+      );
     }
-    warningEl.classList.add("hidden");
-  });
-
-  //Init
-  const init = () => {
-    dataTasks.forEach(({ value, status }) => {
-      warningEl.classList.add("hidden");
-      const todo = document.createElement("div");
-      todo.classList.add("todo");
-      todo.innerHTML = renderTodo({ value, status });
-      appEl.appendChild(todo);
-    });
   };
+};
 
-  init();
+formPrimaryEl.addEventListener("submit", (e) => {
+  e.preventDefault();
+  addTodo(e);
 });
+
+todoList.addEventListener("click", (e) => {
+  if (e.target.matches(".delete path")) {
+    deleteTodo(e);
+  } else if (e.target.matches(".edit path")) {
+    editTodo(e);
+  } else if (e.target.matches(".todo-content")) {
+    stateTransitionTodo(e);
+  }
+  warningPrimaryEl.classList.add("hidden");
+});
+
+const init = (dataTodos) => {
+  let dataTodoStr = dataTodos
+    .map(
+      ({ value, status }, index) => `
+    <li class="todo" data-id="${index}">
+      <p class="todo-content break-words pr-4 max-w-[300px] ${status === "disabled" ? "disabled" : null}">${escapeHTML(value)}</p>
+      <div class="flex gap-3">
+        <svg class="w-5 aspect-square edit" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="pen-to-square" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+          <path fill="currentColor" d="M471.6 21.7c-21.9-21.9-57.3-21.9-79.2 0L362.3 51.7l97.9 97.9 30.1-30.1c21.9-21.9 21.9-57.3 0-79.2L471.6 21.7zm-299.2 220c-6.1 6.1-10.8 13.6-13.5 21.9l-29.6 88.8c-2.9 8.6-.6 18.1 5.8 24.6s15.9 8.7 24.6 5.8l88.8-29.6c8.2-2.8 15.7-7.4 21.9-13.5L437.7 172.3 339.7 74.3 172.4 241.7zM96 64C43 64 0 107 0 160V416c0 53 43 96 96 96H352c53 0 96-43 96-96V320c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7-14.3 32-32 32H96c-17.7 0-32-14.3-32-32V160c0-17.7 14.3-32 32-32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H96z"></path>
+        </svg>
+        <svg class="w-5 aspect-square delete" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="trash" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
+          <path fill="currentColor" d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z"></path>
+        </svg>
+      </div>
+    </li>
+  `
+    )
+    .join("");
+
+  todoList.innerHTML = dataTodoStr;
+};
+
+init(dataTodos);
