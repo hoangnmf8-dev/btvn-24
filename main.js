@@ -1,30 +1,31 @@
-const TODOS = "todos";
-const dataTodos = JSON.parse(localStorage.getItem(TODOS)) ?? [];
-const $ = document.querySelector.bind(document);
-const formPrimaryEl = $("#form");
-const inputPrimaryEl = $("#input");
-const warningPrimaryEl = formPrimaryEl.querySelector(".form-warning");
-const todoList = $(".todo-list");
-const overlay = $(".overlay");
-const modal = $(".modal");
+document.addEventListener("DOMContentLoaded", () => {
+  const TODOS = "todos";
+  const dataTodos = JSON.parse(localStorage.getItem(TODOS)) ?? [];
+  const $ = document.querySelector.bind(document);
+  const formPrimaryEl = $("#form");
+  const inputPrimaryEl = $("#input");
+  const warningPrimaryEl = formPrimaryEl.querySelector(".form-warning");
+  const todoList = $(".todo-list");
+  const overlay = $(".overlay");
+  const modal = $(".modal");
 
-const todoApp = {
-  //Escape html
-  escapeHTML(value) {
-    const div = document.createElement("div");
-    const text = document.createTextNode(value);
-    div.appendChild(text);
-    return div.innerHTML;
-  },
+  const todoApp = {
+    //Escape html
+    escapeHTML(value) {
+      const div = document.createElement("div");
+      const text = document.createTextNode(value);
+      div.appendChild(text);
+      return div.innerHTML;
+    },
 
-  //Set data
-  setData(dataTodos) {
-    localStorage.setItem(TODOS, JSON.stringify(dataTodos));
-  },
+    //Set data
+    setData(dataTodos) {
+      localStorage.setItem(TODOS, JSON.stringify(dataTodos));
+    },
 
-  //Get form
-  getForm(value, status) {
-    return `
+    //Get form
+    getForm(value, status) {
+      return `
       <p class="todo-content break-words pr-4 max-w-[300px] ${
         status === "disabled" ? "disabled" : null
       }">${this.escapeHTML(value)}</p>
@@ -37,56 +38,56 @@ const todoApp = {
         </svg>
       </div>
     `;
-  },
+    },
 
-  //Show warning
-  showWarning(element, warningText) {
-    element.classList.add("text-red-400");
-    element.innerText = warningText;
-    element.classList.remove("hidden");
-  },
+    //Show warning
+    showWarning(element, warningText) {
+      element.classList.add("text-red-400");
+      element.innerText = warningText;
+      element.classList.remove("hidden");
+    },
 
-  //Check input
-  checkInput(inputValue, dataTodos) {
-    const checkInputObj = {};
-    let hasTodo = dataTodos.some(
-      (todo) => todo.value.toLowerCase() === inputValue.toLowerCase()
-    );
-    if (!inputValue) {
-      checkInputObj.isValid = false;
-      checkInputObj.warningText = "Todo cannot be left blank";
-    } else if (hasTodo) {
-      checkInputObj.isValid = false;
-      checkInputObj.warningText = "The todo already exists";
-    } else {
-      checkInputObj.isValid = true;
-    }
-    return checkInputObj;
-  },
+    //Check input
+    checkInput(inputValue, dataTodos) {
+      const checkInputObj = {};
+      let hasTodo = dataTodos.some(
+        (todo) => todo.value.toLowerCase() === inputValue.toLowerCase()
+      );
+      if (!inputValue) {
+        checkInputObj.isValid = false;
+        checkInputObj.warningText = "Todo cannot be left blank";
+      } else if (hasTodo) {
+        checkInputObj.isValid = false;
+        checkInputObj.warningText = "The todo already exists";
+      } else {
+        checkInputObj.isValid = true;
+      }
+      return checkInputObj;
+    },
 
-  //State transition for todo
-  stateTransitionTodo(e) {
-    const currentTodo = e.target.closest(".todo");
-    let todoIndex = currentTodo.dataset.id;
-    if (dataTodos[todoIndex].status === "active") {
-      e.target.classList.add("disabled");
-      dataTodos[todoIndex].status = "disabled";
-    } else {
-      e.target.classList.remove("disabled");
-      dataTodos[todoIndex].status = "active";
-    }
-    this.setData(dataTodos);
-  },
+    //State transition for todo
+    stateTransitionTodo(e) {
+      const currentTodo = e.target.closest(".todo");
+      let todoIndex = currentTodo.dataset.id;
+      if (dataTodos[todoIndex].status === "active") {
+        e.target.classList.add("disabled");
+        dataTodos[todoIndex].status = "disabled";
+      } else {
+        e.target.classList.remove("disabled");
+        dataTodos[todoIndex].status = "active";
+      }
+      this.setData(dataTodos);
+    },
 
-  //Add todo
-  addTodo(e) {
-    let inputPrimaryValue = inputPrimaryEl.value.trim();
-    let checkInputObj = this.checkInput(inputPrimaryValue, dataTodos);
-    if (checkInputObj.isValid) {
-      const liEl = document.createElement("li");
-      liEl.classList.add("todo");
-      liEl.dataset.id = dataTodos.length;
-      liEl.innerHTML = `
+    //Add todo
+    addTodo(e) {
+      let inputPrimaryValue = inputPrimaryEl.value.trim();
+      let checkInputObj = this.checkInput(inputPrimaryValue, dataTodos);
+      if (checkInputObj.isValid) {
+        const liEl = document.createElement("li");
+        liEl.classList.add("todo");
+        liEl.dataset.id = dataTodos.length;
+        liEl.innerHTML = `
       <p class="todo-content break-words pr-4 max-w-[300px]">${this.escapeHTML(
         inputPrimaryValue
       )}</p>
@@ -99,51 +100,51 @@ const todoApp = {
         </svg>
       </div>
     `;
-      todoList.appendChild(liEl);
-      dataTodos.push({
-        value: inputPrimaryValue,
-        status: "active",
-      });
-      this.setData(dataTodos);
-      warningPrimaryEl.classList.add("hidden");
-    } else {
-      this.showWarning(warningPrimaryEl, checkInputObj.warningText);
-    }
-    inputPrimaryEl.value = "";
-    inputPrimaryEl.focus();
-  },
+        todoList.appendChild(liEl);
+        dataTodos.push({
+          value: inputPrimaryValue,
+          status: "active",
+        });
+        this.setData(dataTodos);
+        warningPrimaryEl.classList.add("hidden");
+      } else {
+        this.showWarning(warningPrimaryEl, checkInputObj.warningText);
+      }
+      inputPrimaryEl.value = "";
+      inputPrimaryEl.focus();
+    },
 
-  //Delete todo
-  deleteTodo(e) {
-    let indexTodo = e.target.closest(".todo").dataset.id;
-    modal.classList.remove("hidden");
-    overlay.classList.remove("hidden");
-    modal.querySelector(
-      ".notify"
-    ).innerText = `Are you sure you want to delete this todo? This action cannot be undone.`;
-    modal.querySelector(".confirm-delete").onclick = () => {
-      e.target.closest(".todo").remove();
-      modal.classList.add("hidden");
-      overlay.classList.add("hidden");
-      dataTodos.splice(indexTodo, 1);
-      todoList.querySelectorAll(".todo").forEach((todo, index) => {
-        todo.dataset.id = index;
-      });
-      this.setData(dataTodos);
-    };
-    modal.querySelector(".confirm-cancel").onclick = () => {
-      modal.classList.add("hidden");
-      overlay.classList.add("hidden");
-    };
-  },
+    //Delete todo
+    deleteTodo(e) {
+      let indexTodo = e.target.closest(".todo").dataset.id;
+      modal.classList.remove("hidden");
+      overlay.classList.remove("hidden");
+      modal.querySelector(
+        ".notify"
+      ).innerText = `Are you sure you want to delete this todo? This action cannot be undone.`;
+      modal.querySelector(".confirm-delete").onclick = () => {
+        e.target.closest(".todo").remove();
+        modal.classList.add("hidden");
+        overlay.classList.add("hidden");
+        dataTodos.splice(indexTodo, 1);
+        todoList.querySelectorAll(".todo").forEach((todo, index) => {
+          todo.dataset.id = index;
+        });
+        this.setData(dataTodos);
+      };
+      modal.querySelector(".confirm-cancel").onclick = () => {
+        modal.classList.add("hidden");
+        overlay.classList.add("hidden");
+      };
+    },
 
-  //Edit todo
-  editTodo(e) {
-    const currentTodo = e.target.closest(".todo");
-    let indexTodo = currentTodo.dataset.id;
-    currentTodo.classList.remove("todo");
-    let todoContent = currentTodo.querySelector(".todo-content").innerText;
-    currentTodo.innerHTML = `
+    //Edit todo
+    editTodo(e) {
+      const currentTodo = e.target.closest(".todo");
+      let indexTodo = currentTodo.dataset.id;
+      currentTodo.classList.remove("todo");
+      let todoContent = currentTodo.querySelector(".todo-content").innerText;
+      currentTodo.innerHTML = `
       <form class="form">
         <div class="flex w-full">
           <input class="input" type="text" placeholder="Update task">
@@ -152,61 +153,65 @@ const todoApp = {
         <span class="form-warning hidden"></span>
       </form>
     `;
-    currentTodo.querySelector(".input").value = todoContent;
-    currentTodo.querySelector(".input").focus();
+      currentTodo.querySelector(".input").value = todoContent;
+      currentTodo.querySelector(".input").focus();
 
-    currentTodo.querySelector(".form").onsubmit = (e) => {
-      e.preventDefault();
-      let inputEditvalue = currentTodo.querySelector(".input").value.trim();
-      const dataTodosClone = dataTodos.slice();
-      dataTodosClone.splice(indexTodo, 1);
-      const checkInputObj = this.checkInput(inputEditvalue, dataTodosClone);
+      currentTodo.querySelector(".form").onsubmit = (e) => {
+        e.preventDefault();
+        let inputEditvalue = currentTodo.querySelector(".input").value.trim();
+        const dataTodosClone = dataTodos.slice();
+        dataTodosClone.splice(indexTodo, 1);
+        const checkInputObj = this.checkInput(inputEditvalue, dataTodosClone);
 
-      if (checkInputObj.isValid) {
-        currentTodo.classList.add("todo");
-        let status = dataTodos[indexTodo].status;
-        currentTodo.innerHTML = this.getForm(inputEditvalue, status);
-        dataTodos[indexTodo].value = inputEditvalue; 
-        this.setData(dataTodos);
-      } else {
-        this.showWarning(
-          currentTodo.querySelector(".form-warning"),
-          checkInputObj.warningText
-        );
+        if (checkInputObj.isValid) {
+          currentTodo.classList.add("todo");
+          let status = dataTodos[indexTodo].status;
+          currentTodo.innerHTML = this.getForm(inputEditvalue, status);
+          dataTodos[indexTodo].value = inputEditvalue;
+          this.setData(dataTodos);
+        } else {
+          this.showWarning(
+            currentTodo.querySelector(".form-warning"),
+            checkInputObj.warningText
+          );
+        }
+      };
+    },
+
+    //Handle todo
+    handleTodo(e) {
+      if (e.target.matches(".delete path")) {
+        this.deleteTodo(e);
+      } else if (e.target.matches(".edit path")) {
+        this.editTodo(e);
+      } else if (e.target.matches(".todo-content")) {
+        this.stateTransitionTodo(e);
       }
-    };
-  },
+      warningPrimaryEl.classList.add("hidden");
+    },
 
-  //Handle todo
-  handleTodo(e) {
-    if (e.target.matches(".delete path")) {
-      this.deleteTodo(e);
-    } else if (e.target.matches(".edit path")) {
-      this.editTodo(e);
-    } else if (e.target.matches(".todo-content")) {
-      this.stateTransitionTodo(e);
-    }
-    warningPrimaryEl.classList.add("hidden");
-  },
-
-  init(dataTodos) {
-    let dataTodoStr = dataTodos
-      .map(({ value, status }, index) => `
+    init(dataTodos) {
+      let dataTodoStr = dataTodos
+        .map(
+          ({ value, status }, index) => `
         <li class="todo" data-id="${index}">
           ${this.getForm(value, status)}
         </li>
-      `).join("");
-    todoList.innerHTML = dataTodoStr;
-  },
-};
+      `
+        )
+        .join("");
+      todoList.innerHTML = dataTodoStr;
+    },
+  };
 
-formPrimaryEl.addEventListener("submit", (e) => {
-  e.preventDefault();
-  todoApp.addTodo(e);
+  formPrimaryEl.addEventListener("submit", (e) => {
+    e.preventDefault();
+    todoApp.addTodo(e);
+  });
+
+  todoList.addEventListener("click", (e) => {
+    todoApp.handleTodo(e);
+  });
+
+  todoApp.init(dataTodos);
 });
-
-todoList.addEventListener("click", (e) => {
-  todoApp.handleTodo(e);
-});
-
-todoApp.init(dataTodos);
