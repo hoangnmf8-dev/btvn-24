@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const checkInput = (inputValue) => {
     const checkInputObj = {};
 
-    let hasTask = dataTasks.some((task) => task.value === inputValue);
+    let hasTask = dataTasks.some((task) => task.value.toLowerCase() === inputValue.toLowerCase());
     if (!inputValue) {
       checkInputObj.isInput = false;
       checkInputObj.warningText = "Task cannot be left blank";
@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
       let dataTasksClone = dataTasks.slice(0);
       dataTasksClone.splice(indexBeforeInputInData, 1);
       let hasAfterInputInData = dataTasksClone.some(
-        (task) => task.value === afterInputEditValue
+        (task) => task.value.toLowerCase() === afterInputEditValue.toLowerCase()
       );
       const warningEditEl = formEditEl.querySelector(".form-warning");
       if (afterInputEditValue && !hasAfterInputInData) {
