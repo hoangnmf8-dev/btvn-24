@@ -24,9 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
     },
 
     //Get form
-    getForm(value, status) {
+    getTodo(value, status) {
       return `
-      <p class="todo-content break-words pr-4 max-w-[300px] ${
+      <p class="todo-content break-words max-w-[275px] text-left ${
         status === "disabled" ? "disabled" : null
       }">${this.escapeHTML(value)}</p>
       <div class="flex gap-3">
@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
         liEl.classList.add("todo");
         liEl.dataset.id = dataTodos.length;
         liEl.innerHTML = `
-      <p class="todo-content break-words pr-4 max-w-[300px]">${this.escapeHTML(
+      <p class="todo-content break-words max-w-[275px] text-left">${this.escapeHTML(
         inputPrimaryValue
       )}</p>
       <div class="flex gap-3">
@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (checkInputObj.isValid) {
           currentTodo.classList.add("todo");
           let status = dataTodos[indexTodo].status;
-          currentTodo.innerHTML = this.getForm(inputEditvalue, status);
+          currentTodo.innerHTML = this.getTodo(inputEditvalue, status);
           dataTodos[indexTodo].value = inputEditvalue;
           this.setData(dataTodos);
         } else {
@@ -195,7 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .map(
           ({ value, status }, index) => `
         <li class="todo" data-id="${index}">
-          ${this.getForm(value, status)}
+          ${this.getTodo(value, status)}
         </li>
       `
         )
