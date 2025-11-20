@@ -1,0 +1,14 @@
+.scrollable::-webkit-scrollbar {
+  width: 8px; /* Độ rộng của thanh cuộn */
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+  background-color: #4f46e5; /* Màu tay cầm (thumb) */
+  border-radius: 10px; /* Làm tròn các góc của tay cầm */
+}
+
+.scrollable::-webkit-scrollbar-track {
+  background-color: #f3f4f6; /* Màu nền của đường ray (track) */
+  border-radius: 10px;
+}
+
